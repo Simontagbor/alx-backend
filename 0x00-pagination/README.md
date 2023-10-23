@@ -119,4 +119,61 @@ simontagbor@ubuntu:~/0x04-pagination$ ./2-main.py
 {'page_size': 0, 'page': 3000, 'data': [], 'next_page': None, 'prev_page': 2999, 'total_pages': 195}
 simontagbor@ubuntu:~/0x04-pagination$
 ```
+### [3. Deletion-resilient hypermedia pagination](./3-hypermedia_del_pagination.py)
+In this task, I implemented a method that takes the same arguments (and defaults) as get_hyper and returns a dictionary containing the following key-value pairs:
+    `index`: the index of the first item in the current page
+    `next_index`: the index of the next item after the last item in the current page
+    `prev_index`: the index of the previous item before the first item in the current page
 
+#### Ouput:
+```
+simontagbor@ubuntu:~/0x04-pagination$ cat 3-main.py
+#!/usr/bin/env python3
+"""
+Main file
+"""
+
+Server = __import__('3-hypermedia_del_pagination').Server
+
+server = Server()
+
+server.indexed_dataset()
+
+try:
+    server.get_hyper_index(300000, 100)
+except AssertionError:
+    print("AssertionError raised when out of range")        
+
+
+index = 3
+page_size = 2
+
+print("Nb items: {}".format(len(server._Server__indexed_dataset)))
+
+# 1- request first index
+res = server.get_hyper_index(index, page_size)
+print(res)
+
+# 2- request next index
+print(server.get_hyper_index(res.get('next_index'), page_size))
+
+# 3- remove the first index
+del server._Server__indexed_dataset[res.get('index')]
+print("Nb items: {}".format(len(server._Server__indexed_dataset)))
+
+# 4- request again the initial index -> the first data retreives is not the same as the first request
+print(server.get_hyper_index(index, page_size))
+
+# 5- request again initial next index -> same data page as the request 2-
+print(server.get_hyper_index(res.get('next_index'), page_size))
+
+simontagbor@ubuntu:~/0x04-pagination$ ./3-main.py
+AssertionError raised when out of range
+Nb items: 19418
+{'index': 3, 'data': [['2016', 'FEMALE', 'ASIAN AND PACIFIC ISLANDER', 'Emma', '99', '4'], ['2016', 'FEMALE', 'ASIAN AND PACIFIC ISLANDER', 'Emily', '99', '4']], 'page_size': 2, 'next_index': 5}
+{'index': 5, 'data': [['2016', 'FEMALE', 'ASIAN AND PACIFIC ISLANDER', 'Mia', '79', '5'], ['2016', 'FEMALE', 'ASIAN AND PACIFIC ISLANDER', 'Charlotte', '59', '6']], 'page_size': 2, 'next_index': 7}
+Nb items: 19417
+{'index': 3, 'data': [['2016', 'FEMALE', 'ASIAN AND PACIFIC ISLANDER', 'Emily', '99', '4'], ['2016', 'FEMALE', 'ASIAN AND PACIFIC ISLANDER', 'Mia', '79', '5']], 'page_size': 2, 'next_index': 6}
+{'index': 5, 'data': [['2016', 'FEMALE', 'ASIAN AND PACIFIC ISLANDER', 'Mia', '79', '5'], ['2016', 'FEMALE', 'ASIAN AND PACIFIC ISLANDER', 'Charlotte', '59', '6']], 'page_size': 2, 'next_index': 7}
+simontagbor@ubuntu:~/0x04-pagination$
+```
